@@ -1,0 +1,1301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Options PnL Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f6f7;
+    --panel:#ffffff;
+    --panel-2:#eef1f2;
+    --ink:#122028;
+    --ink-2:#43545e;
+    --ink-3:#71828c;
+    --line:#d9e0e3;
+    --line-strong:#b9c6cb;
+    --accent:#0e6b5c;
+    --accent-ink:#ffffff;
+    --accent-soft:#e2f1ec;
+    --green:#0f7a55;
+    --green-bg:#e6f4ec;
+    --red:#bf3b30;
+    --red-bg:#fbeae7;
+    --amber:#9a6b12;
+    --chart-grid:#e1e7ea;
+    --now-curve:#0b4f43;
+    --shadow:0 1px 2px rgba(18,32,40,.05),0 8px 24px rgba(18,32,40,.05);
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0b1114;
+      --panel:#131c21;
+      --panel-2:#1a262d;
+      --ink:#e8eff2;
+      --ink-2:#a9bcc4;
+      --ink-3:#7e939d;
+      --line:#26353d;
+      --line-strong:#3a4d57;
+      --accent:#2aa88f;
+      --accent-ink:#06110e;
+      --accent-soft:#14352e;
+      --green:#3ec98f;
+      --green-bg:#123527;
+      --red:#ff7a6e;
+      --red-bg:#3d1d1a;
+      --amber:#e3b34e;
+      --chart-grid:#223139;
+      --now-curve:#5eead4;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);
+      color-scheme:dark;
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  .app{max-width:1180px;margin:0 auto;padding:16px 14px 40px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+  h2{font-size:16px;font-weight:700;margin:0 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--ink-2);font-size:13px;margin:0}
+  .card-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 14px;margin-bottom:12px}
+  /* ---------- controls ---------- */
+  .type-toggle{display:inline-flex;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px}
+  .type-toggle button{border:0;background:transparent;color:var(--ink-2);font:inherit;font-weight:600;font-size:14px;padding:7px 22px;border-radius:6px;cursor:pointer}
+  .type-toggle button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+  .type-toggle button:focus-visible,.seg button:focus-visible,button.linklike:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .top-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:14px}
+  .field-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:5px}
+  .field .unit-wrap{position:relative}
+  .field input[type="number"]{width:100%;font-family:"IBM Plex Mono",monospace;font-size:17px;font-weight:600;padding:9px 10px;border:1px solid var(--line-strong);border-radius:7px;background:var(--panel);color:var(--ink)}
+  .field input[type="number"]:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .field .hint{font-size:11.5px;color:var(--ink-3);margin-top:4px}
+  button.linklike{background:none;border:0;color:var(--accent);font:inherit;font-size:12px;font-weight:600;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px}
+  .slider-block{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+  .slider-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;align-items:baseline}
+  .slider-head .lab{font-size:12px;font-weight:600;color:var(--ink-2)}
+  .slider-head .val{font-family:"IBM Plex Mono",monospace;font-size:14px;font-weight:600}
+  .slider-head .val small{color:var(--ink-3);font-weight:400}
+  input[type="range"]{width:100%;accent-color:var(--accent);margin:8px 0 2px;height:28px}
+  .scale-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace}
+  .two-sliders{display:grid;grid-template-columns:1fr 1fr;gap:12px 28px}
+  .now-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px}
+  .now-btn{border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer}
+  .now-btn:active{background:var(--accent);color:var(--accent-ink)}
+  .now-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .now-note{font-size:12px;color:var(--ink-3)}
+  .iv-note{font-size:12px;color:var(--ink-2);margin-top:6px}
+  .iv-note b{color:var(--accent)}
+  .iv-input-wrap{position:relative}
+  .iv-input-wrap input[type="number"]{padding-right:34px}
+  .iv-input-wrap .pct{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-family:"IBM Plex Mono",monospace;font-size:16px;font-weight:600;color:var(--ink-3);pointer-events:none}
+  /* ---------- stats ---------- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:12px 14px}
+  .stat .k{font-size:11.5px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em}
+  .stat .v{font-family:"IBM Plex Mono",monospace;font-size:21px;font-weight:600;margin-top:3px;white-space:nowrap}
+  .stat .d{font-size:12px;color:var(--ink-2);margin-top:2px}
+  .pos{color:var(--green)} .neg{color:var(--red)}
+  /* ---------- chart ---------- */
+  .seg{display:inline-flex;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:2px;gap:2px}
+  .seg button{border:0;background:transparent;color:var(--ink-2);font:inherit;font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:5px;cursor:pointer}
+  .seg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:2px 0 10px;font-size:12.5px;color:var(--ink-2)}
+  .legend .li{display:inline-flex;align-items:center;gap:7px}
+  .swatch{width:22px;height:0;border-top:3px solid;border-radius:2px;display:inline-block}
+  .swatch.dash{border-top-style:dashed}
+  .chart-wrap{width:100%}
+  svg.chart{width:100%;height:auto;display:block;cursor:default;touch-action:pan-y}
+  /* ---------- chart hero (top, largest section) ---------- */
+  .card-chart{padding:22px 20px 18px;border-color:var(--line-strong);box-shadow:0 2px 4px rgba(18,32,40,.06),0 16px 36px rgba(18,32,40,.09)}
+  .card-chart h2{font-size:22px;line-height:1.2;letter-spacing:-.015em}
+  .card-chart .sub{font-size:14px;line-height:1.55}
+  .card-chart .legend{font-size:13.5px;margin-bottom:12px}
+  @media (prefers-color-scheme: dark){ .card-chart{box-shadow:0 2px 4px rgba(0,0,0,.35),0 16px 36px rgba(0,0,0,.35)} }
+  @media (max-width:760px){ .card-chart{padding:16px 14px 14px} .card-chart h2{font-size:19px} .card-chart .sub{font-size:13px} }
+  .zoom-tools{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+  /* ---------- horizontal trace line controls ---------- */
+  .trace-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 12px;padding:10px 12px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px}
+  .trace-btn{border:1px solid var(--accent);background:var(--panel);color:var(--accent);font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer}
+  .trace-btn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+  .trace-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .trace-price{font-size:12.5px;font-weight:600;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px}
+  .trace-price input{width:100px;font-family:"IBM Plex Mono",monospace;font-size:14px;font-weight:600;padding:5px 8px;border:1px solid var(--line-strong);border-radius:6px;background:var(--panel);color:var(--ink)}
+  .trace-price input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .trace-price input:disabled{opacity:.45}
+  .trace-hint{font-size:12px;color:var(--ink-3);flex:1;min-width:200px}
+  .zoom-now{font-size:11.5px;color:var(--ink-3)}
+  .zoom-now b{font-family:"IBM Plex Mono",monospace;color:var(--ink-2);font-weight:600}
+  @media (max-width:760px){ .zoom-tools{align-items:flex-start} }
+  /* ---------- breakdown ---------- */
+  .bd-context{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel-2);border:1px solid var(--line);border-radius:999px;padding:6px 11px;font-size:12.5px;color:var(--ink-2)}
+  .bd-context b{font-family:"IBM Plex Mono",monospace;color:var(--ink);font-weight:600}
+  .bd-context .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block;flex:none}
+  .bd-context.exploring .dot{background:var(--amber)}
+  .break-bar{display:flex;height:44px;border-radius:9px;overflow:hidden;border:1px solid var(--line-strong);background:var(--panel-2);margin:14px 0 6px}
+  .break-seg{display:flex;align-items:center;justify-content:center;min-width:0;overflow:hidden;white-space:nowrap;transition:width .18s ease;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:13px}
+  .break-seg-intr{background:var(--accent);color:var(--accent-ink)}
+  .break-seg-extr{background:#e9b44c;color:#231a00;background-image:repeating-linear-gradient(-45deg,rgba(255,255,255,.22) 0 8px,transparent 8px 16px)}
+  @media (prefers-color-scheme: dark){
+    .break-seg-extr{background:#b07d1a;color:#fff8e6}
+  }
+  .break-seg-empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--ink-3);font-size:12.5px;font-family:"IBM Plex Sans",sans-serif;font-weight:500}
+  .break-labels{display:flex;justify-content:space-between;gap:12px;font-size:11.5px;color:var(--ink-3);margin-bottom:14px}
+  .break-grid{display:grid;grid-template-columns:1fr 1fr 1.15fr;gap:12px}
+  .break-box{border:1px solid var(--line);border-radius:9px;padding:13px 14px;background:var(--panel)}
+  .break-box.intr{border-top:3px solid var(--accent)}
+  .break-box.extr{border-top:3px solid #d99a1f}
+  .break-box.total{border-top:3px solid var(--ink-3);background:var(--panel-2)}
+  .break-box .bk{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);display:flex;align-items:center;gap:7px}
+  .break-box .bk i{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+  .break-box .bv{font-family:"IBM Plex Mono",monospace;font-size:24px;font-weight:600;line-height:1.1;margin-top:6px}
+  .break-box .bv small{font-size:13px;color:var(--ink-3);font-weight:400}
+  .break-box .bd{font-size:12.5px;color:var(--ink-2);margin-top:5px;line-height:1.45}
+  .break-box .bd b{font-family:"IBM Plex Mono",monospace;color:var(--ink)}
+  .bd-verdict{margin-top:12px;background:var(--accent-soft);border-radius:8px;padding:11px 13px;font-size:13.5px;line-height:1.5}
+  .bd-verdict b{font-family:"IBM Plex Mono",monospace}
+  .bd-timeline{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+  .bd-timeline .tl-title{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin-bottom:9px}
+  .tl-row{display:grid;grid-template-columns:118px 1fr 168px;gap:10px;align-items:center;margin-bottom:7px;font-size:12.5px}
+  .tl-row .tl-when{color:var(--ink-2);font-weight:600;white-space:nowrap}
+  .tl-row .tl-when small{display:block;font-weight:400;color:var(--ink-3);font-size:11px}
+  .tl-bar{height:14px;border-radius:5px;overflow:hidden;display:flex;background:var(--panel-2);border:1px solid var(--line)}
+  .tl-bar .tl-intr{background:var(--accent);height:100%}
+  .tl-bar .tl-extr{background:#e9b44c;height:100%}
+  .tl-row .tl-nums{font-family:"IBM Plex Mono",monospace;font-size:11.5px;text-align:right;color:var(--ink-2);white-space:nowrap}
+  .tl-row .tl-nums b{color:var(--ink)}
+  @media (max-width:760px){
+    .break-grid{grid-template-columns:1fr 1fr}
+    .break-box.total{grid-column:1 / -1}
+    .tl-row{grid-template-columns:92px 1fr}
+    .tl-row .tl-nums{grid-column:2;text-align:left}
+    .break-box .bv{font-size:20px}
+  }
+  /* ---------- heatmap ---------- */
+  .hm-wrap{overflow:hidden}
+  .hm{display:grid;gap:3px}
+  .hm .cell{border-radius:4px;padding:6px 2px;text-align:center;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;line-height:1.25;cursor:pointer;border:1px solid transparent;min-width:0;overflow:hidden;white-space:nowrap}
+  .hm .cell small{display:block;font-weight:400;font-size:10px;opacity:.75}
+  .hm .cell.sel{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+  .hm .corner,.hm .colh,.hm .rowh{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-2);display:flex;align-items:center;justify-content:center;text-align:center;padding:2px}
+  .hm .rowh{justify-content:flex-end;text-align:right;padding-right:7px;line-height:1.3;flex-direction:column;align-items:flex-end}
+  .hm .rowh small{color:var(--ink-3);font-size:10px}
+  .hm-detail{margin-top:12px;font-size:13.5px;background:var(--panel-2);border-radius:7px;padding:10px 12px}
+  .hm-detail b{font-family:"IBM Plex Mono",monospace}
+  .hm-legend{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-3);margin-top:10px}
+  .hm-bar{flex:1;height:8px;border-radius:4px;background:linear-gradient(to right,#bf3b30,#f3d9d5,#eef1f2,#cfe8da,#0f7a55)}
+  @media (prefers-color-scheme: dark){
+    .hm-bar{background:linear-gradient(to right,#ff7a6e,#3d1d1a,#1a262d,#123527,#3ec98f)}
+  }
+  /* ---------- explainer ---------- */
+  .explain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 22px}
+  .explain-grid h3{font-size:13.5px;margin:0 0 4px}
+  .explain-grid p{font-size:13px;color:var(--ink-2);margin:0}
+  .foot{font-size:12px;color:var(--ink-3);margin-top:4px}
+  @media (max-width:760px){
+    .field-grid{grid-template-columns:1fr 1fr}
+    .stats{grid-template-columns:1fr 1fr}
+    .two-sliders{grid-template-columns:1fr}
+    .explain-grid{grid-template-columns:1fr}
+    .hm .cell{font-size:9.5px;padding:5px 1px}
+    .hm .cell small{display:none}
+    .hm .colh{font-size:9.5px}
+    .stat .v{font-size:18px}
+    .type-toggle button{padding:7px 16px}
+  }
+</style>
+</head>
+<body>
+<main class="app">
+
+  <!-- ================= CONTROLS ================= -->
+  <section class="card" aria-label="Your trade">
+    <div class="top-row">
+      <div>
+        <h2>Your 0DTE trade — SPY, long only</h2>
+        <p class="sub">Enter what you bought. Everything below updates as you change it.</p>
+      </div>
+      <div class="type-toggle" role="group" aria-label="Option type">
+        <button type="button" id="btnCall" aria-pressed="true">Call</button>
+        <button type="button" id="btnPut" aria-pressed="false">Put</button>
+      </div>
+    </div>
+
+    <div class="field-grid">
+      <div class="field">
+        <label for="inSpot">SPY price now ($)</label>
+        <input type="number" id="inSpot" value="680.00" step="0.25" min="1" inputmode="decimal">
+        <div class="hint">Where SPY is when you buy.</div>
+      </div>
+      <div class="field">
+        <label for="inStrike">Strike ($)</label>
+        <input type="number" id="inStrike" value="680" step="0.5" min="1" inputmode="decimal">
+        <div class="hint"><button type="button" class="linklike" id="btnATM">Set strike = SPY price (ATM)</button></div>
+      </div>
+      <div class="field">
+        <label for="inPremium">Premium paid ($)</label>
+        <input type="number" id="inPremium" value="1.65" step="0.05" min="0.01" inputmode="decimal">
+        <div class="hint">Per share — what you actually paid.</div>
+      </div>
+      <div class="field">
+        <label for="inContracts">Contracts</label>
+        <input type="number" id="inContracts" value="10" step="1" min="1" max="10000" inputmode="numeric">
+        <div class="hint">1 contract = 100 shares.</div>
+      </div>
+    </div>
+
+    <div class="two-sliders">
+      <div class="slider-block">
+        <div class="slider-head">
+          <span class="lab">TIME NOW (same day, expiry 1:00pm PT)</span>
+          <span class="val" id="timeVal"></span>
+        </div>
+        <input type="range" id="inTime" min="390" max="780" step="5" value="600" aria-label="Time of day, Pacific">
+        <div class="scale-labels"><span>6:30am PT open</span><span>1:00pm PT expiry</span></div>
+        <div class="now-row">
+          <button type="button" class="now-btn" id="btnNow">Set to current Pacific Time</button>
+          <span class="now-note" id="nowNote" role="status"></span>
+        </div>
+      </div>
+      <div class="slider-block field">
+        <label for="inIV">Implied volatility (IV)</label>
+        <div class="iv-input-wrap">
+          <input type="number" id="inIV" value="15" step="0.5" min="1" max="300" inputmode="decimal" aria-label="Implied volatility percent">
+          <span class="pct" aria-hidden="true">%</span>
+        </div>
+        <div class="hint">Type any value — 5% is calm, 80% is an event spike.</div>
+        <p class="iv-note" id="ivNote"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PRICE-OVER-TIME CHART ================= -->
+  <section class="card card-chart" aria-label="SPY price over time chart">
+    <div class="card-head">
+      <div>
+        <h2>SPY price over time — where SPY needs to be, hour by hour</h2>
+        <p class="sub">Market time runs across from the current time — <strong id="chartStartLabel">now</strong> — to 1:00pm PT expiry (not from the 6:30am open) and SPY price runs up the side. The main line is the <strong>breakeven price</strong>: the SPY price at which your trade is worth exactly what you paid, if you sold at that moment. It drifts away from your strike all day — that's theta eating your premium. Above the line is profit territory for a call (below it for a put). Move across the chart and the numbers for that exact spot — PnL if you sold then, contract value, the breakeven price then — appear right on the chart, just above the dot; the dot follows your cursor freely, with no snapping to set times or prices — and they also live in the stats, the breakdown, and the grid below. Or switch on the horizontal trace line to pin the readout to one SPY price and follow it across the whole day. There's no live feed here, so SPY's price is the one you enter above — the flat line shows where it sits now, and the chart answers “where does it need to get to, and by when?” The price window spans at most $5 either side of SPY's current price — scroll up or down over the chart to zoom it in and out, pinch on touch screens, or use the range buttons. A light set of grey dotted lines behind the paths still divides price and time into even steps, so you can follow a price straight across the day or a moment straight up and down without the background getting in the way.</p>
+      </div>
+      <div class="zoom-tools">
+        <div class="seg" role="group" aria-label="Chart price window around current SPY price">
+          <button type="button" data-zoom="2" aria-pressed="false">±$2</button>
+          <button type="button" data-zoom="3.5" aria-pressed="false">±$3.50</button>
+          <button type="button" data-zoom="5" aria-pressed="true">±$5</button>
+        </div>
+        <div class="zoom-now" id="zoomNow">Price window <b>±$5.00</b> · scroll over chart to zoom</div>
+      </div>
+    </div>
+    <div class="trace-row">
+      <button type="button" class="trace-btn" id="btnTrace" aria-pressed="false">Horizontal trace line</button>
+      <label class="trace-price" for="inTracePrice">Line price $
+        <input type="number" id="inTracePrice" step="0.25" min="1" inputmode="decimal" disabled>
+      </label>
+      <span class="trace-hint" id="traceHint">Turn it on, then move across the chart — the dot and the stats ride along the line at that one price. Click the chart to drop the line at the price you clicked.</span>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="chart-wrap"><svg class="chart" id="chart" viewBox="0 0 760 560" role="img" aria-label="Chart of SPY price against time of day, showing the breakeven price path for this trade"><text x="380" y="282" text-anchor="middle" font-size="14" fill="#71828c" font-family="IBM Plex Sans, sans-serif">Drawing the price chart…</text></svg></div>
+  </section>
+
+  <!-- ================= STATS ================= -->
+  <div class="stats" aria-label="Key numbers">
+    <div class="stat"><div class="k">PnL right now</div><div class="v" id="stPnlNow">—</div><div class="d" id="stPnlNowD"></div></div>
+    <div class="stat"><div class="k">Breakeven at expiry</div><div class="v" id="stBE">—</div><div class="d" id="stBED"></div></div>
+    <div class="stat"><div class="k">Max loss</div><div class="v neg" id="stMaxLoss">—</div><div class="d">Premium paid — that's the floor.</div></div>
+    <div class="stat"><div class="k">Contract value now</div><div class="v" id="stVal">—</div><div class="d" id="stValD"></div></div>
+  </div>
+
+  <!-- ================= INTRINSIC / EXTRINSIC BREAKDOWN ================= -->
+  <section class="card" aria-label="Intrinsic versus extrinsic value breakdown">
+    <div class="card-head">
+      <div>
+        <h2>What your contract is actually made of — intrinsic vs. extrinsic</h2>
+        <p class="sub">Every dollar of value is one or the other. Intrinsic is locked in if SPY holds here to expiry. Extrinsic is time value — it melts to $0 by 1:00pm PT no matter what.</p>
+      </div>
+      <div class="bd-context" id="bdContext"></div>
+    </div>
+
+    <div class="break-bar" id="bdBar" aria-hidden="true"></div>
+    <div class="break-labels"><span>◀ Intrinsic — decay-proof</span><span>Extrinsic — still melting ▶</span></div>
+
+    <div class="break-grid">
+      <div class="break-box intr">
+        <div class="bk"><i style="background:var(--accent)"></i> Intrinsic value</div>
+        <div class="bv" id="bdIntrVal">—</div>
+        <div class="bd" id="bdIntrD"></div>
+      </div>
+      <div class="break-box extr">
+        <div class="bk"><i style="background:#e9b44c"></i> Extrinsic (time) value</div>
+        <div class="bv" id="bdExtrVal">—</div>
+        <div class="bd" id="bdExtrD"></div>
+      </div>
+      <div class="break-box total">
+        <div class="bk">Total contract value</div>
+        <div class="bv" id="bdTotalVal">—</div>
+        <div class="bd" id="bdTotalD"></div>
+      </div>
+    </div>
+
+    <div class="bd-verdict" id="bdVerdict"></div>
+
+    <div class="bd-timeline">
+      <div class="tl-title">Same SPY price, later in the day — watch extrinsic melt away</div>
+      <div id="bdTimeline"></div>
+      <p style="font-size:12px;color:var(--ink-3);margin:8px 0 0">At expiry the bar is all intrinsic (or $0 if out of the money). Move the time slider above, change SPY price, or hover the chart above — this whole section follows.</p>
+    </div>
+  </section>
+
+  <!-- ================= HEATMAP ================= -->
+  <section class="card" aria-label="PnL heatmap">
+    <div class="card-head">
+      <div>
+        <h2>PnL grid — price across, time down</h2>
+        <p class="sub">Same trade, every combination at a glance. Tap any cell for the exact number.</p>
+      </div>
+    </div>
+    <div class="hm-wrap"><div class="hm" id="heatmap"></div></div>
+    <div class="hm-legend"><span>Big loss</span><div class="hm-bar"></div><span>Big profit</span></div>
+    <div class="hm-detail" id="hmDetail"></div>
+  </section>
+
+  <!-- ================= EXPLAINER ================= -->
+  <section class="card" aria-label="How to read this">
+    <div class="explain-grid">
+      <div>
+        <h3>The drifting line is theta</h3>
+        <p>Early in the day the breakeven line hugs your strike, because the contract still holds time value you can sell back. As expiry nears, that time value is gone, so SPY has to travel the full premium past the strike just for you to break even — the line bends away, fastest in the last hour.</p>
+      </div>
+      <div>
+        <h3>Which side of the line are you on?</h3>
+        <p>For a call, any SPY price above the breakeven line at that time means the contract is worth more than you paid; below it, less. Puts flip: profit is underneath the line. The further SPY sits from the line, the bigger the gain or loss — hover the chart for the exact dollars at any moment, or check the stats and the grid.</p>
+      </div>
+      <div>
+        <h3>Breakeven needs a real move</h3>
+        <p>Buying at the money means SPY has to move past the strike <em>plus</em> the premium you paid before expiry — for a call that's strike + premium, for a put strike − premium. The later in the day it is, the bigger the move you need per hour left.</p>
+      </div>
+    </div>
+    <p class="foot">Priced with Black-Scholes at the IV above, held constant across the chart. Real fills differ: the bid/ask spread, IV rising or crushing after a catalyst, and a mid-price limit that only fills if someone meets you all move your actual PnL off these lines. Expiry is 1:00pm PT the same day.</p>
+  </section>
+
+</main>
+
+<script>
+(function(){
+  "use strict";
+  // ---------- math ----------
+  function erf(x){
+    var s = x < 0 ? -1 : 1; x = Math.abs(x);
+    var t = 1/(1 + 0.3275911*x);
+    var y = 1 - (((((1.061405429*t - 1.453152027)*t) + 1.421413741)*t - 0.284496736)*t + 0.254829592)*t*Math.exp(-x*x);
+    return s*y;
+  }
+  function ncdf(x){ return 0.5*(1 + erf(x/Math.SQRT2)); }
+  var R = 0.04; // risk-free, negligible intraday but kept in the model
+  // T in years on a trading-time basis: one full session = 1/252 year
+  function yearsLeft(minutesLeft){ return (minutesLeft/390)/252; }
+  function bsPrice(S,K,minLeft,sigma,type){
+    if (minLeft <= 0.01){
+      return type === "call" ? Math.max(S-K,0) : Math.max(K-S,0);
+    }
+    var T = yearsLeft(minLeft);
+    var sq = sigma*Math.sqrt(T);
+    var d1 = (Math.log(S/K) + (R + sigma*sigma/2)*T)/sq;
+    var d2 = d1 - sq;
+    if (type === "call") return S*ncdf(d1) - K*Math.exp(-R*T)*ncdf(d2);
+    return K*Math.exp(-R*T)*ncdf(-d2) - S*ncdf(-d1);
+  }
+  function bsDelta(S,K,minLeft,sigma,type){
+    if (minLeft <= 0.01) return 0;
+    var T = yearsLeft(minLeft);
+    var d1 = (Math.log(S/K) + (R + sigma*sigma/2)*T)/(sigma*Math.sqrt(T));
+    return type === "call" ? ncdf(d1) : ncdf(d1) - 1;
+  }
+  function intrinsic(S,K,type){ return type === "call" ? Math.max(S-K,0) : Math.max(K-S,0); }
+  function impliedVol(S,K,minLeft,premium,type){
+    if (minLeft <= 1) return null;
+    var lo = 0.02, hi = 3.0;
+    if (premium <= intrinsic(S,K,type) + 0.005) return null;
+    if (bsPrice(S,K,minLeft,lo,type) > premium || bsPrice(S,K,minLeft,hi,type) < premium) return null;
+    for (var i=0;i<70;i++){
+      var mid = (lo+hi)/2;
+      if (bsPrice(S,K,minLeft,mid,type) > premium) hi = mid; else lo = mid;
+    }
+    return (lo+hi)/2;
+  }
+
+  // ---------- state / elements ----------
+  var $ = function(id){ return document.getElementById(id); };
+  var els = {
+    spot:$("inSpot"), strike:$("inStrike"), premium:$("inPremium"), contracts:$("inContracts"),
+    time:$("inTime"), iv:$("inIV"), timeVal:$("timeVal"), ivNote:$("ivNote"),
+    chart:$("chart"), legend:$("legend"), heatmap:$("heatmap"), hmDetail:$("hmDetail"),
+    bdContext:$("bdContext"), bdBar:$("bdBar"),
+    bdIntrVal:$("bdIntrVal"), bdIntrD:$("bdIntrD"), bdExtrVal:$("bdExtrVal"), bdExtrD:$("bdExtrD"),
+    bdTotalVal:$("bdTotalVal"), bdTotalD:$("bdTotalD"), bdVerdict:$("bdVerdict"), bdTimeline:$("bdTimeline"),
+    traceBtn:$("btnTrace"), tracePrice:$("inTracePrice"), traceHint:$("traceHint")
+  };
+  var state = { type:"call", zoom:5, hoverPrice:null, hoverTime:null, hmSel:null, ivMatched:true, trace:false, tracePrice:null };
+
+  function num(el, fallback){ var v = parseFloat(el.value); return isFinite(v) ? v : fallback; }
+  function trade(){
+    return {
+      type: state.type,
+      S: Math.max(num(els.spot, 680), 0.01),
+      K: Math.max(num(els.strike, 680), 0.01),
+      prem: Math.max(num(els.premium, 1), 0),
+      n: Math.max(Math.round(num(els.contracts, 1)), 1),
+      nowMin: Math.min(Math.max(num(els.time, 600), 390), 780), // minutes after midnight PT
+      iv: Math.min(Math.max(num(els.iv, 15), 1), 300)/100
+    };
+  }
+  function pnlAt(tr, S, minLeft){
+    return (bsPrice(S, tr.K, minLeft, tr.iv, tr.type) - tr.prem) * 100 * tr.n;
+  }
+  function breakdownAt(tr, S, minLeft){
+    var total = bsPrice(S, tr.K, minLeft, tr.iv, tr.type);
+    var intr = intrinsic(S, tr.K, tr.type);
+    // BS price can dip a hair below intrinsic with rounding near expiry — never show negative extrinsic
+    if (intr > total) intr = total;
+    var extr = Math.max(total - intr, 0);
+    return { total: total, intr: intr, extr: extr };
+  }
+  function perShare(v){ return "$" + v.toFixed(2); }
+  function money(v, signed){
+    var a = Math.abs(v), s = a >= 1000 ? Math.round(a).toLocaleString("en-US") : (a >= 100 ? a.toFixed(0) : a.toFixed(2).replace(/\.?0+$/,""));
+    if (signed) return (v < -0.004 ? "-$" : "+$") + s;
+    return (v < 0 ? "-$" : "$") + s;
+  }
+  function moneyShort(v){
+    var a = Math.abs(v);
+    if (a >= 1000) return (v < 0 ? "-$" : "+$") + (a/1000).toFixed(1).replace(/\.0$/,"") + "k";
+    return money(v, true);
+  }
+  function axisMoney(v){
+    var a = Math.abs(v);
+    if (a >= 1000) return (v < 0 ? "-$" : "+$") + (a/1000).toFixed(1).replace(/\.0$/,"") + "k";
+    return money(v, true);
+  }
+  // PnL as a percentage return on the total premium paid for the position.
+  // −100% is a total loss of the premium; contracts cancel out (PnL and
+  // premium paid both scale with contract count).
+  function pnlPct(v, tr){
+    var paid = tr.prem * 100 * tr.n;
+    return paid > 0 ? v / paid * 100 : null;
+  }
+  function axisPct(v, tr){
+    var pc = pnlPct(v, tr);
+    if (pc === null || !isFinite(pc)) return "";
+    var a = Math.abs(pc), s;
+    if (a >= 1000) s = (a/1000).toFixed(1).replace(/\.0$/, "") + "k";
+    else if (a >= 99.5) s = Math.round(a).toString();
+    else if (a >= 9.95) s = a.toFixed(0);
+    else s = a.toFixed(1).replace(/\.0$/, "");
+    return (pc < -0.04 ? "-" : (pc > 0.04 ? "+" : "")) + s + "%";
+  }
+  function priceLabel(p){
+    var r = Math.round(p*100)/100;
+    if (Math.abs(r - Math.round(r)) < 0.001) return "$" + Math.round(r).toString();
+    return "$" + r.toFixed(2).replace(/0$/, "");
+  }
+  function clockPT(minAfterMid){
+    var h = Math.floor(minAfterMid/60), m = Math.round(minAfterMid%60);
+    if (m === 60){ h++; m = 0; }
+    var ap = h >= 12 ? "pm" : "am"; var h12 = h%12 === 0 ? 12 : h%12;
+    return h12 + ":" + (m < 10 ? "0" : "") + m + ap + " PT";
+  }
+  function leftLabel(minLeft){
+    if (minLeft <= 0) return "expiry";
+    var h = Math.floor(minLeft/60), m = Math.round(minLeft%60);
+    if (m === 60){ h++; m = 0; }
+    if (h && m) return h + "h " + m + "m left";
+    if (h) return h + "h left";
+    return m + "m left";
+  }
+  // Current time in Pacific, as minutes after midnight — used so the chart
+  // starts at "now" instead of the 6:30am open. LOCKED to Pacific: this is
+  // the one place "now" is read, and it always resolves the clock in
+  // America/Los_Angeles (PST/PDT as the date dictates), never in the
+  // device's own timezone — so travelling, or a device set to another zone,
+  // never changes what "now" means here. Jacob adjusts the slider by hand
+  // if he ever wants anything else.
+  function currentPTMinutes(){
+    try {
+      var now = new Date();
+      var parts = new Intl.DateTimeFormat("en-US", { timeZone:"America/Los_Angeles", hour:"numeric", minute:"numeric", hour12:false }).formatToParts(now);
+      var hh = 0, mm = 0;
+      for (var i=0;i<parts.length;i++){
+        if (parts[i].type === "hour") hh = parseInt(parts[i].value, 10) % 24;
+        if (parts[i].type === "minute") mm = parseInt(parts[i].value, 10);
+      }
+      return hh*60 + mm;
+    } catch(e){ return null; }
+  }
+  // The chart's left edge is the current time (the TIME NOW slider value).
+  // Keep at least 30 minutes visible so the axis never collapses at expiry.
+  function chartStartMin(tr){
+    var s = tr.nowMin;
+    if (780 - s < 30) s = 780 - 30;
+    return s;
+  }
+  function chartHourMarks(startMin){
+    var marks = [startMin];
+    var firstHour = Math.ceil((startMin + 1) / 60) * 60;
+    for (var m = firstHour; m < 780; m += 60) marks.push(m);
+    if (marks[marks.length - 1] !== 780) marks.push(780);
+    return marks;
+  }
+
+  // curve time points: now, then fractions of what's left, then expiry
+  function curveTimes(rem){
+    if (rem <= 0) return [{min:0, tag:"Expiry"}];
+    var fracs = [1, 0.6, 0.3, 0.1, 0], out = [], seen = {};
+    for (var i=0;i<fracs.length;i++){
+      var m = Math.round(rem*fracs[i]);
+      if (seen[m]) continue; seen[m] = true;
+      out.push({ min:m, tag: i === 0 ? "Now" : (m === 0 ? "Expiry" : "") });
+    }
+    return out;
+  }
+  var CURVE_COLORS = ["var(--now-curve)", "#5b84c4", "#8d9aa3", "#c08a2d", "#122028"];
+  var CURVE_HEX = ["#0b4f43", "#5b84c4", "#8d9aa3", "#c08a2d", "#122028"];
+  function curveColor(i, n){
+    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches){
+      return ["#5eead4", "#8fb2e8", "#a7b6be", "#e3b34e", "#e8eff2"][Math.min(i,4)];
+    }
+    return CURVE_HEX[Math.min(i,4)];
+  }
+
+  // ---------- IV matching ----------
+  function matchIV(){
+    var tr = trade();
+    var rem = 780 - tr.nowMin;
+    var iv = impliedVol(tr.S, tr.K, rem, tr.prem, tr.type);
+    if (iv !== null){
+      els.iv.value = (iv*100).toFixed(1);
+      state.ivMatched = true;
+    } else {
+      state.ivMatched = false;
+    }
+    updateIVNote();
+  }
+  function updateIVNote(){
+    els.ivNote.innerHTML = state.ivMatched
+      ? "IV is <b>matched to your premium</b> at the current SPY price, strike and time — so PnL at “now” starts near $0. Type a different value to test a vol spike or crush."
+      : "This premium is at or below intrinsic value for the time left, so no IV matches it exactly. The chart uses the IV you entered as-is.";
+  }
+
+  // ---------- stats ----------
+  function renderStats(tr){
+    var rem = 780 - tr.nowMin;
+    var valNow = bsPrice(tr.S, tr.K, rem, tr.iv, tr.type);
+    var pnlNow = (valNow - tr.prem)*100*tr.n;
+    var be = tr.type === "call" ? tr.K + tr.prem : tr.K - tr.prem;
+    var move = be - tr.S, movePct = move/tr.S*100;
+    var el = $("stPnlNow");
+    el.textContent = money(pnlNow, true);
+    el.className = "v " + (pnlNow >= 0 ? "pos" : "neg");
+    $("stPnlNowD").textContent = "At SPY $" + tr.S.toFixed(2) + ", " + leftLabel(rem) + ".";
+    $("stBE").textContent = "$" + be.toFixed(2);
+    $("stBED").textContent = "SPY must move " + (move >= 0 ? "+" : "") + move.toFixed(2) + " (" + (movePct >= 0 ? "+" : "") + movePct.toFixed(2) + "%) by 1:00pm PT.";
+    $("stMaxLoss").textContent = money(-tr.prem*100*tr.n);
+    $("stVal").textContent = "$" + valNow.toFixed(2);
+    var d = bsDelta(tr.S, tr.K, rem, tr.iv, tr.type);
+    $("stValD").textContent = "Per share. Delta " + d.toFixed(2) + " — gains ≈ $" + Math.abs(d*100*tr.n).toFixed(0) + " per $1 SPY move, per all contracts.";
+  }
+
+  // ---------- intrinsic / extrinsic breakdown ----------
+  function renderBreakdown(tr){
+    var rem = 780 - tr.nowMin;
+    var exploring = state.hoverPrice !== null;
+    var S = exploring ? state.hoverPrice : tr.S;
+    var bd = breakdownAt(tr, S, rem);
+    var intrPct = bd.total > 0.005 ? bd.intr / bd.total * 100 : 0;
+    var extrPct = bd.total > 0.005 ? bd.extr / bd.total * 100 : 0;
+    var intrTot = bd.intr * 100 * tr.n;
+    var extrTot = bd.extr * 100 * tr.n;
+    var totalTot = bd.total * 100 * tr.n;
+    var pnlNowAtS = (bd.total - tr.prem) * 100 * tr.n;
+    var pnlAtExpirySamePrice = (bd.intr - tr.prem) * 100 * tr.n;
+
+    // context pill
+    els.bdContext.className = "bd-context" + (exploring ? " exploring" : "");
+    els.bdContext.innerHTML = '<span class="dot"></span>' + (exploring ? 'Exploring chart · ' : 'At your inputs · ') +
+      'SPY <b>$' + S.toFixed(2) + '</b> · <b>' + clockPT(tr.nowMin) + '</b> · ' + leftLabel(rem) +
+      ' · ' + (tr.type === "call" ? "Call" : "Put") + ' $' + tr.K.toFixed(0) + ' · ' + tr.n + ' contract' + (tr.n > 1 ? "s" : "");
+
+    // stacked bar
+    if (bd.total <= 0.005){
+      els.bdBar.innerHTML = '<div class="break-seg-empty">Worth $0.00 here — no intrinsic or extrinsic value left at this price &amp; time</div>';
+    } else {
+      var iw = Math.max(intrPct, bd.intr > 0 ? 4 : 0), ew = Math.max(extrPct, bd.extr > 0 ? 4 : 0);
+      // normalise tiny slivers so labels stay readable without distorting much
+      var sumW = iw + ew; if (sumW > 0){ iw = iw / sumW * 100; ew = ew / sumW * 100; }
+      var intrLabel = bd.intr > 0 ? perShare(bd.intr) + ' · ' + intrPct.toFixed(0) + '%' : '';
+      var extrLabel = bd.extr > 0 ? perShare(bd.extr) + ' · ' + extrPct.toFixed(0) + '%' : '';
+      els.bdBar.innerHTML =
+        (bd.intr > 0.005 ? '<div class="break-seg break-seg-intr" style="width:' + iw + '%">' + intrLabel + '</div>' : '') +
+        (bd.extr > 0.005 ? '<div class="break-seg break-seg-extr" style="width:' + ew + '%">' + extrLabel + '</div>' : '');
+    }
+
+    els.bdIntrVal.innerHTML = perShare(bd.intr) + ' <small>/ share</small>';
+    els.bdIntrD.innerHTML =
+      (bd.intr <= 0.005
+        ? (tr.type === "call"
+            ? 'SPY is at or below your $' + tr.K.toFixed(0) + ' strike, so there\'s nothing in the money yet. This becomes &gt; $0 only once SPY moves past the strike.'
+            : 'SPY is at or above your $' + tr.K.toFixed(0) + ' strike, so there\'s nothing in the money yet. This becomes &gt; $0 only once SPY moves past the strike.')
+        : 'SPY is <b>' + perShare(bd.intr) + '</b> in the money. Worth <b>' + money(intrTot) + '</b> across all contracts — this part survives to expiry if SPY holds here.') +
+      '<br><span style="color:var(--ink-3)">' + intrPct.toFixed(0) + '% of the contract\'s value</span>';
+
+    els.bdExtrVal.innerHTML = perShare(bd.extr) + ' <small>/ share</small>';
+    els.bdExtrD.innerHTML =
+      (bd.extr <= 0.005
+        ? (rem <= 0 ? 'No time left — extrinsic is gone at expiry, by definition.' : 'Almost no time value left at this price. What you see is almost all intrinsic.')
+        : 'Pure time value. Worth <b>' + money(extrTot) + '</b> across all contracts — and <b>all of it disappears by 1:00pm PT</b> if SPY doesn\'t move, even if SPY stays exactly here.') +
+      '<br><span style="color:var(--ink-3)">' + extrPct.toFixed(0) + '% of the contract\'s value · melts with theta + IV crush</span>';
+
+    els.bdTotalVal.innerHTML = perShare(bd.total) + ' <small>/ share</small>';
+    els.bdTotalD.innerHTML = 'Position worth <b>' + money(totalTot) + '</b> now vs. <b>' + money(tr.prem * 100 * tr.n) + '</b> paid (' + perShare(tr.prem) + '/share). PnL at this price &amp; time: <b class="' + (pnlNowAtS >= 0 ? 'pos' : 'neg') + '">' + money(pnlNowAtS, true) + '</b>.';
+
+    // verdict — the hold/sell question this answers
+    if (bd.total <= 0.005){
+      els.bdVerdict.innerHTML = 'At SPY <b>$' + S.toFixed(2) + '</b> this contract is worthless — there\'s nothing left for time to take, and nothing intrinsic to protect.';
+    } else if (bd.intr <= 0.005){
+      els.bdVerdict.innerHTML = '<b>100% extrinsic.</b> If SPY sits at <b>$' + S.toFixed(2) + '</b> until expiry, you lose the whole <b>' + money(extrTot) + '</b> of remaining value to decay alone — PnL would go to <b>' + money(pnlAtExpirySamePrice, true) + '</b> with no price move against you at all. ATM buys start here: every dollar is melting until SPY moves.';
+    } else if (bd.extr <= 0.005){
+      els.bdVerdict.innerHTML = 'If SPY holds at <b>$' + S.toFixed(2) + '</b> to expiry, you keep essentially all of it: <b>' + money(intrTot) + '</b> intrinsic, PnL <b>' + money(pnlAtExpirySamePrice, true) + '</b>. Time can\'t hurt you much here anymore.';
+    } else {
+      els.bdVerdict.innerHTML = 'If SPY just sits at <b>$' + S.toFixed(2) + '</b> until 1:00pm PT, time alone takes <b>' + money(extrTot) + '</b> from you — you\'d keep <b>' + money(intrTot) + '</b> and finish at PnL <b>' + money(pnlAtExpirySamePrice, true) + '</b> (vs. <b>' + money(pnlNowAtS, true) + '</b> now). That <b>' + perShare(bd.extr) + '/share</b> gap is what you\'re paying to keep holding.';
+    }
+
+    // timeline at same price
+    var times = curveTimes(rem);
+    var tl = '';
+    for (var i = 0; i < times.length; i++){
+      var tb = breakdownAt(tr, S, times[i].min);
+      var ip = tb.total > 0.005 ? tb.intr / tb.total * 100 : 0;
+      var ep = tb.total > 0.005 ? 100 - ip : 0;
+      var when = times[i].tag === 'Now' ? 'Now' : (times[i].min === 0 ? 'Expiry' : clockPT(780 - times[i].min).replace(' PT',''));
+      tl += '<div class="tl-row"><div class="tl-when">' + when + '<small>' + leftLabel(times[i].min) + '</small></div>' +
+        '<div class="tl-bar">' + (tb.total > 0.005 ? '<div class="tl-intr" style="width:' + ip + '%"></div><div class="tl-extr" style="width:' + ep + '%"></div>' : '') + '</div>' +
+        '<div class="tl-nums">Intr <b>' + perShare(tb.intr) + '</b> · Extr <b>' + perShare(tb.extr) + '</b></div></div>';
+    }
+    els.bdTimeline.innerHTML = tl;
+  }
+
+  // ---------- price-over-time chart ----------
+  // Resolve a palette colour to a literal value. SVG presentation attributes
+  // (stroke="var(--…)") are dropped by some webviews, which can blank the whole
+  // chart, so the chart only ever uses resolved colours.
+  function cssVar(name, fallback){
+    var v = "";
+    try { v = window.getComputedStyle(document.documentElement).getPropertyValue(name).trim(); } catch(e){}
+    return v || fallback;
+  }
+  // Solve for the SPY price at which the contract is worth `target` per share
+  // with minLeft minutes remaining. Call values rise as SPY rises and put
+  // values fall, so bisection works for both. Returns null when that value is
+  // unreachable at that time (e.g. +100% on a put whose 2× premium exceeds
+  // what the contract could ever be worth).
+  function priceForValue(tr, target, minLeft){
+    if (target < 0) return null;
+    if (minLeft <= 0.01){
+      return tr.type === "call" ? tr.K + target : tr.K - target;
+    }
+    var lo = 0.01, hi = Math.max(tr.K * 4, tr.K + 200);
+    var vLo = bsPrice(lo, tr.K, minLeft, tr.iv, tr.type);
+    var vHi = bsPrice(hi, tr.K, minLeft, tr.iv, tr.type);
+    if (target < Math.min(vLo, vHi) || target > Math.max(vLo, vHi)) return null;
+    for (var i = 0; i < 60; i++){
+      var mid = (lo + hi) / 2;
+      var v = bsPrice(mid, tr.K, minLeft, tr.iv, tr.type);
+      if (tr.type === "call"){ if (v < target) lo = mid; else hi = mid; }
+      else { if (v > target) lo = mid; else hi = mid; }
+    }
+    return (lo + hi) / 2;
+  }
+  function shortClock(minAfterMid){
+    var h = Math.floor(minAfterMid / 60), m = Math.round(minAfterMid % 60);
+    if (m === 60){ h++; m = 0; }
+    var ap = h >= 12 ? "p" : "a", h12 = h % 12 === 0 ? 12 : h % 12;
+    return h12 + ":" + (m < 10 ? "0" : "") + m + ap;
+  }
+  // Last-resort chart: flat reference lines only (no Black-Scholes paths),
+  // drawn if the main chart ever fails, so the chart area is never an empty box.
+  function drawChartFallback(tr){
+    try {
+      var iw2 = W - M.l - M.r, ih2 = H - M.t - M.b;
+      var range = priceRange(tr), lo = range[0], hi = range[1];
+      var start2 = chartStartMin(tr), span2 = 780 - start2;
+      function X2(min){ return M.l + (min - start2) / span2 * iw2; }
+      function Y2(p){ return M.t + (hi - p) / (hi - lo) * ih2; }
+      var ls = cssVar("--line-strong", "#b9c6cb"), i3 = cssVar("--ink-3", "#71828c"),
+          amb = cssVar("--amber", "#9a6b12"), acc = cssVar("--accent", "#0e6b5c"),
+          ink2 = cssVar("--ink-2", "#43545e"), now = cssVar("--now-curve", "#0b4f43");
+      var be = tr.type === "call" ? tr.K + tr.prem : tr.K - tr.prem;
+      var s = '<rect x="' + M.l + '" y="' + M.t + '" width="' + iw2 + '" height="' + ih2 + '" fill="none" stroke="' + ls + '" stroke-width="1"/>';
+      // same light dotted tracking grid as the main chart: a few lines,
+      // dots spaced well apart
+      for (var gy = 1; gy < 4; gy++){
+        var gyy = Y2(lo + (hi - lo) * gy / 4);
+        s += '<line x1="' + M.l + '" y1="' + gyy.toFixed(1) + '" x2="' + (W - M.r) + '" y2="' + gyy.toFixed(1) + '" stroke="' + ls + '" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="0.1 7" opacity="0.65"/>';
+      }
+      for (var gm = Math.ceil((start2 + 1) / 60) * 60; gm < 780; gm += 60){
+        var gxx = X2(gm);
+        s += '<line x1="' + gxx.toFixed(1) + '" y1="' + M.t + '" x2="' + gxx.toFixed(1) + '" y2="' + (M.t + ih2) + '" stroke="' + ls + '" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="0.1 7" opacity="0.65"/>';
+      }
+      var marks = chartHourMarks(start2);
+      for (var i = 0; i < marks.length; i++){
+        var anch2 = marks[i] === 780 ? "end" : (i === 0 ? "start" : "middle");
+        s += '<text x="' + X2(marks[i]) + '" y="' + (H - 18) + '" text-anchor="' + anch2 + '" font-size="11.5" fill="' + i3 + '" font-family="IBM Plex Mono,monospace">' + shortClock(marks[i]) + '</text>';
+      }
+      if (tr.K >= lo && tr.K <= hi) s += '<line x1="' + M.l + '" y1="' + Y2(tr.K) + '" x2="' + (W - M.r) + '" y2="' + Y2(tr.K) + '" stroke="' + amb + '" stroke-width="1.4" stroke-dasharray="5 4"/><text x="' + (M.l + 6) + '" y="' + (Y2(tr.K) - 6) + '" font-size="11" font-weight="600" fill="' + amb + '">strike $' + tr.K.toFixed(0) + '</text>';
+      s += '<line x1="' + M.l + '" y1="' + Y2(tr.S) + '" x2="' + (W - M.r) + '" y2="' + Y2(tr.S) + '" stroke="' + acc + '" stroke-width="1.6"/><text x="' + (M.l + 6) + '" y="' + (Y2(tr.S) - 6) + '" font-size="11" font-weight="600" fill="' + acc + '">SPY now $' + tr.S.toFixed(2) + '</text>';
+      s += '<line x1="' + X2(tr.nowMin) + '" y1="' + M.t + '" x2="' + X2(tr.nowMin) + '" y2="' + (M.t + ih2) + '" stroke="' + ink2 + '" stroke-width="1.2" stroke-dasharray="4 4"/>';
+      s += '<text x="' + (M.l + iw2 / 2) + '" y="' + (M.t + 22) + '" text-anchor="middle" font-size="12.5" fill="' + ink2 + '">SPY price over time — simplified view · breakeven at expiry $' + be.toFixed(2) + '</text>';
+      els.chart.innerHTML = s;
+      els.legend.innerHTML = '<span class="li"><span class="swatch" style="border-top-color:' + now + '"></span>Breakeven price path</span><span class="li"><span class="swatch dash" style="border-top-color:' + amb + '"></span>Strike $' + tr.K.toFixed(0) + '</span><span class="li"><span class="swatch" style="border-top-color:' + acc + '"></span>SPY now $' + tr.S.toFixed(2) + '</span>';
+    } catch(e){ /* the placeholder text shipped inside the SVG stays up instead of a blank box */ }
+  }
+  var M = { l:66, r:16, t:14, b:40 }, W = 760, H = 560;
+  function priceRange(tr){
+    // Fixed dollar window around the current SPY price — never wider than ±$5.
+    var half = Math.min(state.zoom, 5);
+    return [tr.S - half, tr.S + half];
+  }
+  function renderChart(tr){
+    try { buildChart(tr); }
+    catch(e){ drawChartFallback(tr); }
+  }
+  function buildChart(tr){
+    var cGrid = cssVar("--chart-grid", "#e1e7ea"), cInk3 = cssVar("--ink-3", "#71828c"), cInk2 = cssVar("--ink-2", "#43545e"),
+        cInk = cssVar("--ink", "#122028"), cLine = cssVar("--line-strong", "#b9c6cb"),
+        cAmber = cssVar("--amber", "#9a6b12"), cAccent = cssVar("--accent", "#0e6b5c"), cPanel = cssVar("--panel", "#ffffff"),
+        cNow = cssVar("--now-curve", "#0b4f43"), cGreen = cssVar("--green", "#0f7a55"), cRed = cssVar("--red", "#bf3b30");
+    var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var cTrace = dark ? "#8fb2e8" : "#2f5f9e";
+    var fillPos = dark ? "rgba(62,201,143,0.13)" : "rgba(15,122,85,0.10)";
+    var fillNeg = dark ? "rgba(255,122,110,0.12)" : "rgba(191,59,48,0.08)";
+    var range = priceRange(tr), lo = range[0], hi = range[1];
+    var iw = W - M.l - M.r, ih = H - M.t - M.b;
+    var startMin = chartStartMin(tr), span = 780 - startMin;
+    if (state.hoverTime !== null && state.hoverTime < startMin) state.hoverTime = startMin;
+    var startLabelEl = document.getElementById("chartStartLabel");
+    if (startLabelEl) startLabelEl.textContent = clockPT(startMin);
+    function X(min){ return M.l + (min - startMin) / span * iw; }
+    function Y(p){ return M.t + (hi - p) / (hi - lo) * ih; }
+    // Price paths across the day: the SPY price at which the contract is
+    // worth the target per share at that time. Breakeven = worth the premium
+    // paid; the fainter pair are the +100% and −50% PnL paths.
+    var NS = 78;
+    function seriesFor(target){
+      var pts = [];
+      for (var i = 0; i <= NS; i++){
+        var min = startMin + span * i / NS;
+        var p = priceForValue(tr, target, 780 - min);
+        pts.push(p === null ? null : [min, p]);
+      }
+      return pts;
+    }
+    function pathFrom(pts){
+      var d = "", pen = false;
+      for (var i = 0; i < pts.length; i++){
+        if (!pts[i]){ pen = false; continue; }
+        d += (pen ? "L" : "M") + X(pts[i][0]).toFixed(1) + " " + Y(pts[i][1]).toFixed(1) + " ";
+        pen = true;
+      }
+      return d;
+    }
+    function lastValid(pts){
+      for (var i = pts.length - 1; i >= 0; i--) if (pts[i]) return pts[i];
+      return null;
+    }
+    var bePts = seriesFor(tr.prem);
+    var upPts = tr.prem > 0.001 ? seriesFor(tr.prem * 2) : [];
+    var dnPts = tr.prem > 0.001 ? seriesFor(tr.prem * 0.5) : [];
+    var out = '<defs><clipPath id="plotClip"><rect x="' + M.l + '" y="' + M.t + '" width="' + iw + '" height="' + ih + '"/></clipPath></defs>';
+    // horizontal grid + SPY price labels (y axis)
+    var ticks = 5, yStep = (hi - lo) / ticks;
+    var yDec = yStep < 0.35 ? 2 : (yStep < 3.5 ? 1 : 0);
+    for (var t = 0; t <= ticks; t++){
+      var pv = lo + yStep * t, y = Y(pv);
+      out += '<line x1="' + M.l + '" y1="' + y + '" x2="' + (W - M.r) + '" y2="' + y + '" stroke="' + cGrid + '" stroke-width="1"/>';
+      out += '<text x="' + (M.l - 8) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11.5" font-weight="600" fill="' + cInk2 + '" font-family="IBM Plex Mono,monospace">$' + pv.toFixed(yDec) + '</text>';
+    }
+    out += '<text x="14" y="' + (M.t + ih / 2) + '" text-anchor="middle" font-size="11" fill="' + cInk3 + '" transform="rotate(-90 14 ' + (M.t + ih / 2) + ')">SPY price</text>';
+    // Light dotted tracking grid: one grey dotted line halfway between each
+    // pair of labelled price lines, with the dots spaced well apart, so a
+    // price can still be followed straight across the chart without the
+    // background getting busy. A dash shorter than the line width with
+    // round caps renders as true dots.
+    var minorY = yStep / 2;
+    for (var my = 1; my < ticks * 2; my++){
+      if (my % 2 === 0) continue;
+      var myy = Y(lo + minorY * my);
+      out += '<line x1="' + M.l + '" y1="' + myy.toFixed(1) + '" x2="' + (W - M.r) + '" y2="' + myy.toFixed(1) + '" stroke="' + cLine + '" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="0.1 7" opacity="0.65"/>';
+    }
+    // vertical grid + time labels (x axis)
+    var hourMarks = chartHourMarks(startMin);
+    for (var xi = 0; xi < hourMarks.length; xi++){
+      var xm = hourMarks[xi], xx = X(xm);
+      if (xm < 780) out += '<line x1="' + xx + '" y1="' + M.t + '" x2="' + xx + '" y2="' + (M.t + ih) + '" stroke="' + cGrid + '" stroke-width="1"/>';
+      out += '<text x="' + xx + '" y="' + (H - 18) + '" text-anchor="' + (xm === 780 ? "end" : (xm === startMin ? "start" : "middle")) + '" font-size="11.5" fill="' + cInk3 + '" font-family="IBM Plex Mono,monospace">' + shortClock(xm) + '</text>';
+    }
+    // A few matching dotted verticals at even time steps (15–30 minutes
+    // depending on how much of the day is on screen), skipping the hours
+    // that already have a solid line — a sparse grid, evenly spaced both
+    // ways, just enough to track against.
+    var stepCands = [5, 10, 15, 20, 30, 60], vStep = 60;
+    for (var sc2 = 0; sc2 < stepCands.length; sc2++){ if (span / stepCands[sc2] <= 8){ vStep = stepCands[sc2]; break; } }
+    if (vStep < 60){
+      var firstV = Math.ceil((startMin + 1) / vStep) * vStep;
+      for (var vm = firstV; vm < 780; vm += vStep){
+        if (vm % 60 === 0) continue;
+        var vx2 = X(vm);
+        out += '<line x1="' + vx2.toFixed(1) + '" y1="' + M.t + '" x2="' + vx2.toFixed(1) + '" y2="' + (M.t + ih) + '" stroke="' + cLine + '" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="0.1 7" opacity="0.65"/>';
+      }
+    }
+    out += '<text x="' + (M.l + iw / 2) + '" y="' + (H - 3) + '" text-anchor="middle" font-size="11" fill="' + cInk3 + '">Time of day (PT)</text>';
+    out += '<g clip-path="url(#plotClip)">';
+    // profit / loss shading either side of the breakeven path
+    var valid = [];
+    for (var vi = 0; vi < bePts.length; vi++) if (bePts[vi]) valid.push(bePts[vi]);
+    if (valid.length > 1){
+      function shade(toTop){
+        var edgeY = toTop ? M.t - 60 : M.t + ih + 60;
+        var d = "M" + X(valid[0][0]).toFixed(1) + " " + Y(valid[0][1]).toFixed(1) + " ";
+        for (var i = 1; i < valid.length; i++) d += "L" + X(valid[i][0]).toFixed(1) + " " + Y(valid[i][1]).toFixed(1) + " ";
+        d += "L" + X(valid[valid.length - 1][0]).toFixed(1) + " " + edgeY + " L" + X(valid[0][0]).toFixed(1) + " " + edgeY + " Z";
+        return d;
+      }
+      var profitTop = tr.type === "call";
+      out += '<path d="' + shade(profitTop) + '" fill="' + fillPos + '" stroke="none"/>';
+      out += '<path d="' + shade(!profitTop) + '" fill="' + fillNeg + '" stroke="none"/>';
+    }
+    // PnL contour paths
+    var dUp = pathFrom(upPts), dDn = pathFrom(dnPts);
+    if (dUp) out += '<path d="' + dUp + '" fill="none" stroke="' + cGreen + '" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" opacity="0.85"/>';
+    if (dDn) out += '<path d="' + dDn + '" fill="none" stroke="' + cRed + '" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" opacity="0.85"/>';
+    // strike + current SPY price lines
+    if (tr.K >= lo && tr.K <= hi){
+      out += '<line x1="' + M.l + '" y1="' + Y(tr.K) + '" x2="' + (W - M.r) + '" y2="' + Y(tr.K) + '" stroke="' + cAmber + '" stroke-width="1.4" stroke-dasharray="5 4"/>';
+      out += '<text x="' + (M.l + 6) + '" y="' + (Y(tr.K) - 6) + '" font-size="11" font-weight="600" fill="' + cAmber + '">strike $' + tr.K.toFixed(0) + '</text>';
+    }
+    out += '<line x1="' + M.l + '" y1="' + Y(tr.S) + '" x2="' + (W - M.r) + '" y2="' + Y(tr.S) + '" stroke="' + cAccent + '" stroke-width="1.6"/>';
+    out += '<text x="' + (W - M.r - 6) + '" y="' + (Y(tr.S) + (tr.S >= tr.K ? 15 : -6)) + '" text-anchor="end" font-size="11" font-weight="600" fill="' + cAccent + '">SPY now $' + tr.S.toFixed(2) + '</text>';
+    // horizontal trace line at the price the user pinned
+    if (state.trace && state.tracePrice !== null && state.tracePrice >= lo && state.tracePrice <= hi){
+      out += '<line x1="' + M.l + '" y1="' + Y(state.tracePrice) + '" x2="' + (W - M.r) + '" y2="' + Y(state.tracePrice) + '" stroke="' + cTrace + '" stroke-width="2.2"/>';
+      out += '<text x="' + (M.l + 6) + '" y="' + (Y(state.tracePrice) - 7) + '" font-size="11" font-weight="700" fill="' + cTrace + '">trace $' + state.tracePrice.toFixed(2) + '</text>';
+    }
+    // breakeven path (the main line)
+    var dBe = pathFrom(bePts);
+    if (dBe) out += '<path d="' + dBe + '" fill="none" stroke="' + cNow + '" stroke-width="3" stroke-linejoin="round"/>';
+    // contour + breakeven labels at the expiry (right) end
+    var beEnd = lastValid(bePts), upEnd = lastValid(upPts), dnEnd = lastValid(dnPts);
+    function endLabel(pt, txt, col, dy){
+      if (!pt) return "";
+      var ey = Y(pt[1]);
+      if (ey < M.t + 4 || ey > M.t + ih - 2) return "";
+      return '<text x="' + (W - M.r - 6) + '" y="' + (ey + dy) + '" text-anchor="end" font-size="11" font-weight="600" fill="' + col + '">' + txt + '</text>';
+    }
+    out += endLabel(beEnd, "breakeven", cNow, -8);
+    out += endLabel(upEnd, "+100%", cGreen, -7);
+    out += endLabel(dnEnd, "−50%", cRed, 14);
+    // "now" time marker
+    var nx = X(tr.nowMin);
+    out += '<line x1="' + nx + '" y1="' + M.t + '" x2="' + nx + '" y2="' + (M.t + ih) + '" stroke="' + cInk2 + '" stroke-width="1.3" stroke-dasharray="4 4"/>';
+    var nAnchor = nx < M.l + 70 ? "start" : (nx > W - M.r - 70 ? "end" : "middle");
+    out += '<text x="' + (nAnchor === "middle" ? nx : (nAnchor === "start" ? nx + 5 : nx - 5)) + '" y="' + (M.t + 12) + '" text-anchor="' + nAnchor + '" font-size="11" font-weight="600" fill="' + cInk2 + '">now · ' + clockPT(tr.nowMin).replace(" PT", "") + '</text>';
+    // hover crosshair
+    if (state.hoverTime !== null){
+      var hx = X(state.hoverTime);
+      out += '<line x1="' + hx + '" y1="' + M.t + '" x2="' + hx + '" y2="' + (M.t + ih) + '" stroke="' + cInk3 + '" stroke-width="1"/>';
+      var beHov = priceForValue(tr, tr.prem, 780 - state.hoverTime);
+      if (beHov !== null && beHov >= lo && beHov <= hi){
+        out += '<circle cx="' + hx + '" cy="' + Y(beHov) + '" r="4.5" fill="' + cNow + '" stroke="' + cPanel + '" stroke-width="1.5"/>';
+      }
+      if (state.hoverPrice !== null){
+        var hy = Y(state.hoverPrice);
+        // While tracing, the pinned trace line itself is the horizontal guide —
+        // the plain grey crosshair line would just sit on top of it.
+        if (!state.trace) out += '<line x1="' + M.l + '" y1="' + hy + '" x2="' + (W - M.r) + '" y2="' + hy + '" stroke="' + cInk3 + '" stroke-width="1"/>';
+        out += '<circle cx="' + hx + '" cy="' + hy + '" r="4" fill="' + cInk2 + '" stroke="' + cPanel + '" stroke-width="1.5"/>';
+      }
+    }
+    out += '</g>';
+    out += '<rect id="hoverZone" x="' + M.l + '" y="' + M.t + '" width="' + iw + '" height="' + ih + '" fill="transparent"/>';
+    // In-chart readout: the hover stats ride on the chart itself, in a small
+    // panel just above the grey hover dot, instead of a strip below the chart.
+    if (state.hoverTime !== null && state.hoverPrice !== null){
+      var tT = state.hoverTime, tRem = 780 - tT, tS = state.hoverPrice;
+      var tVal = bsPrice(tS, tr.K, tRem, tr.iv, tr.type);
+      var tPnl = (tVal - tr.prem) * 100 * tr.n;
+      var tPct = axisPct(tPnl, tr);
+      var tBe = priceForValue(tr, tr.prem, tRem);
+      var tCol = tPnl >= 0 ? cGreen : cRed;
+      var pnlTxt = money(tPnl, true) + (tPct ? " (" + tPct + ")" : "");
+      var rows = [
+        { plain: clockPT(tT) + " · SPY $" + tS.toFixed(2),
+          svg: '<tspan font-weight="700" fill="' + cInk + '">' + clockPT(tT) + " · SPY $" + tS.toFixed(2) + '</tspan>' },
+        { plain: "PnL if sold: " + pnlTxt,
+          svg: '<tspan fill="' + cInk2 + '">PnL if sold: </tspan><tspan font-weight="600" fill="' + tCol + '">' + pnlTxt + '</tspan>' },
+        { plain: "Contract value: $" + tVal.toFixed(2) + "/share",
+          svg: '<tspan fill="' + cInk2 + '">Contract value: </tspan><tspan font-weight="600" fill="' + cInk + '">$' + tVal.toFixed(2) + '/share</tspan>' }
+      ];
+      if (tBe !== null){
+        var tNeed = tBe - tS;
+        var needTxt = Math.abs(tNeed) < 0.005 ? "$0.00 — right at it" : (tNeed >= 0 ? "+$" : "−$") + Math.abs(tNeed).toFixed(2);
+        rows.push({ plain: "Breakeven then: $" + tBe.toFixed(2),
+          svg: '<tspan fill="' + cInk2 + '">Breakeven then: </tspan><tspan font-weight="600" fill="' + cInk + '">$' + tBe.toFixed(2) + '</tspan>' });
+        rows.push({ plain: "Move needed: " + needTxt,
+          svg: '<tspan fill="' + cInk2 + '">Move needed: </tspan><tspan font-weight="600" fill="' + cInk + '">' + needTxt + '</tspan>' });
+      }
+      var maxCh = 0;
+      for (var ri2 = 0; ri2 < rows.length; ri2++) maxCh = Math.max(maxCh, rows[ri2].plain.length);
+      var tipW = Math.ceil(maxCh * 7.3) + 24, tipH = rows.length * 16.5 + 14;
+      var dotX = X(tT), dotY = Y(tS);
+      var tipX = Math.min(Math.max(dotX - tipW / 2, M.l + 2), W - M.r - tipW - 2);
+      var tipY = dotY - tipH - 14;
+      if (tipY < M.t + 2) tipY = dotY + 14; // no room above the dot — drop the panel below it instead
+      if (tipY + tipH > M.t + ih - 2) tipY = M.t + ih - 2 - tipH;
+      var tip = '<g pointer-events="none"><rect x="' + tipX.toFixed(1) + '" y="' + tipY.toFixed(1) + '" width="' + tipW + '" height="' + tipH.toFixed(1) + '" rx="7" fill="' + cPanel + '" stroke="' + cLine + '" stroke-width="1" opacity="0.97"/>';
+      for (var rj = 0; rj < rows.length; rj++){
+        tip += '<text x="' + (tipX + 12).toFixed(1) + '" y="' + (tipY + 19 + rj * 16.5).toFixed(1) + '" font-size="12" font-family="IBM Plex Mono,monospace">' + rows[rj].svg + '</text>';
+      }
+      tip += '</g>';
+      out += tip;
+    }
+    els.chart.innerHTML = out;
+    // legend
+    els.legend.innerHTML =
+      '<span class="li"><span class="swatch" style="border-top-color:' + cNow + '"></span>Breakeven price — PnL $0 if sold then</span>' +
+      '<span class="li"><span class="swatch dash" style="border-top-color:' + cGreen + '"></span>+100% PnL path</span>' +
+      '<span class="li"><span class="swatch dash" style="border-top-color:' + cRed + '"></span>−50% PnL path</span>' +
+      '<span class="li"><span class="swatch dash" style="border-top-color:' + cAmber + '"></span>Strike $' + tr.K.toFixed(0) + '</span>' +
+      '<span class="li"><span class="swatch" style="border-top-color:' + cAccent + '"></span>SPY now $' + tr.S.toFixed(2) + ' (flat — if it holds)</span>' +
+      (state.trace && state.tracePrice !== null ? '<span class="li"><span class="swatch" style="border-top-color:' + cTrace + '"></span>Trace line $' + state.tracePrice.toFixed(2) + ' — readout pinned to this price</span>' : '');
+    // hover wiring — x gives the time, y gives the SPY price
+    var zone = document.getElementById("hoverZone");
+    function fromEvent(e){
+      if (e.touches && e.touches.length >= 2) return; // two fingers = pinch zoom, not hover
+      var r = els.chart.getBoundingClientRect();
+      var cx = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+      var cy = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
+      var vx = (cx - r.left) / r.width * W;
+      var vy = (cy - r.top) / r.height * H;
+      var min = startMin + (vx - M.l) / iw * span;
+      var p = hi - (vy - M.t) / ih * (hi - lo);
+      state.hoverTime = Math.min(Math.max(min, startMin), 780);
+      // Tracing: the price stays pinned to the trace line wherever the cursor
+      // moves vertically, so only the time follows the pointer.
+      if (state.trace && state.tracePrice !== null) state.hoverPrice = state.tracePrice;
+      else state.hoverPrice = Math.min(Math.max(p, lo), hi);
+      renderChart(tr); renderBreakdown(tr);
+    }
+    zone.addEventListener("mousemove", fromEvent);
+    zone.addEventListener("touchstart", fromEvent, {passive:true});
+    zone.addEventListener("touchmove", fromEvent, {passive:true});
+    // Clicking the chart while tracing drops the line at the clicked price.
+    zone.addEventListener("click", function(e){
+      if (!state.trace) return;
+      var r = els.chart.getBoundingClientRect();
+      var vy = (e.clientY - r.top) / r.height * H;
+      var p = hi - (vy - M.t) / ih * (hi - lo);
+      state.tracePrice = Math.round(p * 100) / 100; // the exact price clicked, to the cent — no snapping
+      state.hoverPrice = state.tracePrice;
+      els.tracePrice.value = state.tracePrice.toFixed(2);
+      renderChart(tr); renderBreakdown(tr);
+    });
+    zone.addEventListener("mouseleave", function(){ state.hoverTime = null; state.hoverPrice = null; renderChart(tr); renderBreakdown(tr); });
+  }
+
+  // ---------- heatmap ----------
+  function renderHeatmap(tr){
+    var rem = 780 - tr.nowMin;
+    var range = priceRange(tr), lo = range[0], hi = range[1];
+    var narrow = window.innerWidth && window.innerWidth < 640;
+    var COLS = narrow ? 7 : 13, ROWS = 7;
+    var prices = [], rowTimes = [], grid = [], maxAbs = 1;
+    // Snap each column to the exact price its label shows, so the PnL in a
+    // cell is always the PnL at the printed price (whole dollars normally,
+    // half dollars when the chart is zoomed tight and steps get small).
+    var stepRaw = (hi-lo)/(COLS-1);
+    // Snap increment shrinks with the window so columns stay distinct when zoomed tight.
+    var snap = stepRaw >= 2 ? 1 : (stepRaw >= 0.75 ? 0.5 : (stepRaw >= 0.3 ? 0.25 : 0.1));
+    for (var c=0;c<COLS;c++){
+      var raw = lo + (hi-lo)*c/(COLS-1);
+      prices.push(Math.round(raw/snap)*snap);
+    }
+    for (var r2=0;r2<ROWS;r2++) rowTimes.push(rem <= 0 ? 0 : Math.round(rem*(1 - r2/(ROWS-1))));
+    for (var rr=0;rr<ROWS;rr++){
+      grid.push([]);
+      for (var cc=0;cc<COLS;cc++){
+        var p = pnlAt(tr, prices[cc], rowTimes[rr]);
+        grid[rr].push(p);
+        if (Math.abs(p) > maxAbs) maxAbs = Math.abs(p);
+      }
+    }
+    if (!state.hmSel) state.hmSel = {r:0, c:Math.floor(COLS/2)};
+    if (state.hmSel.r >= ROWS) state.hmSel.r = 0;
+    if (state.hmSel.c >= COLS) state.hmSel.c = Math.floor(COLS/2);
+    var html = "";
+    html += '<div class="corner"></div>';
+    for (var h=0;h<COLS;h++) html += '<div class="colh">'+priceLabel(prices[h])+'</div>';
+    for (var r3=0;r3<ROWS;r3++){
+      var clk = rowTimes[r3] === 0 && rem > 0 ? "1:00pm" : clockPT(780 - rowTimes[r3]).replace(" PT","");
+      html += '<div class="rowh"><span>'+clk+'</span><small>'+leftLabel(rowTimes[r3])+'</small></div>';
+      for (var c3=0;c3<COLS;c3++){
+        var v = grid[r3][c3];
+        var inten = Math.min(Math.abs(v)/maxAbs, 1);
+        var bg, fg;
+        var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (v >= 0){ bg = dark ? "rgba(62,201,143,"+(0.08+inten*0.55)+")" : "rgba(15,122,85,"+(0.06+inten*0.5)+")"; fg = dark ? "#d9f5e7" : "#0c3d2c"; }
+        else { bg = dark ? "rgba(255,122,110,"+(0.08+inten*0.5)+")" : "rgba(191,59,48,"+(0.06+inten*0.45)+")"; fg = dark ? "#ffe3df" : "#571b15"; }
+        if (inten < 0.22) fg = "var(--ink-2)";
+        var sel = (state.hmSel.r === r3 && state.hmSel.c === c3) ? " sel" : "";
+        var cellTxt = narrow ? moneyShort(v) : money(v, true);
+        html += '<div class="cell'+sel+'" data-r="'+r3+'" data-c="'+c3+'" role="button" tabindex="0" aria-label="PnL '+money(v,true)+' at SPY '+prices[c3].toFixed(2)+'" style="background:'+bg+';color:'+fg+'">'+cellTxt+'<small>SPY '+priceLabel(prices[c3])+'</small></div>';
+      }
+    }
+    els.heatmap.style.gridTemplateColumns = (narrow ? "48px" : "64px") + " repeat(" + COLS + ", minmax(0, 1fr))";
+    els.heatmap.innerHTML = html;
+    var cells = els.heatmap.querySelectorAll(".cell");
+    for (var k=0;k<cells.length;k++){
+      (function(cell){
+        function pick(){ state.hmSel = {r:parseInt(cell.getAttribute("data-r"),10), c:parseInt(cell.getAttribute("data-c"),10)}; renderHeatmap(tr); }
+        cell.addEventListener("click", pick);
+        cell.addEventListener("keydown", function(e){ if (e.key === "Enter" || e.key === " "){ e.preventDefault(); pick(); } });
+      })(cells[k]);
+    }
+    var sr = state.hmSel.r, sc = state.hmSel.c, sv = grid[sr][sc];
+    var hbd = breakdownAt(tr, prices[sc], rowTimes[sr]);
+    els.hmDetail.innerHTML = "At <b>SPY $"+prices[sc].toFixed(2)+"</b> with <b>"+leftLabel(rowTimes[sr])+"</b> ("+clockPT(780-rowTimes[sr])+"): contract worth <b>$"+hbd.total.toFixed(2)+"</b> per share → PnL <b class='"+(sv>=0?"pos":"neg")+"'>"+money(sv,true)+"</b> on "+tr.n+" contract"+(tr.n>1?"s":"")+"." + "<br><span style='font-size:12.5px'>Of that $"+hbd.total.toFixed(2)+": <b>$"+hbd.intr.toFixed(2)+" intrinsic</b> (keeps to expiry if SPY holds) + <b>$"+hbd.extr.toFixed(2)+" extrinsic</b> (melts to $0 by expiry) — per share.</span>";
+  }
+
+  // ---------- zoom (scroll / pinch / buttons) ----------
+  var ZOOM_MIN = 0.5, ZOOM_MAX = 5;
+  function updateZoomUI(){
+    var zn = $("zoomNow");
+    if (zn) zn.innerHTML = 'Price window <b>±$' + state.zoom.toFixed(2) + '</b> around SPY · scroll over chart to zoom · double-click resets';
+    document.querySelectorAll("[data-zoom]").forEach(function(x){
+      x.setAttribute("aria-pressed", Math.abs(parseFloat(x.getAttribute("data-zoom")) - state.zoom) < 0.01 ? "true" : "false");
+    });
+    els.chart.style.cursor = "default";
+  }
+  function setZoom(z){
+    var nz = Math.min(Math.max(z, ZOOM_MIN), ZOOM_MAX);
+    if (Math.abs(nz - state.zoom) < 0.005){ updateZoomUI(); return; }
+    state.zoom = nz;
+    // While tracing, the readout stays on the line even if zooming pushes the
+    // line outside the narrower window; otherwise a hover point outside the
+    // new window no longer means anything.
+    if (state.trace && state.tracePrice !== null){
+      state.hoverPrice = state.tracePrice;
+    } else if (state.hoverPrice !== null){
+      var tr0 = trade();
+      if (state.hoverPrice < tr0.S - nz || state.hoverPrice > tr0.S + nz) state.hoverPrice = null;
+    }
+    state.hmSel = null;
+    render();
+  }
+  // Wheel and pinch fire in bursts — coalesce them into one render per frame.
+  var zoomPending = null, zoomRafOn = false;
+  function scheduleZoom(z){
+    zoomPending = Math.min(Math.max(z, ZOOM_MIN), ZOOM_MAX);
+    if (zoomRafOn) return;
+    zoomRafOn = true;
+    var raf = window.requestAnimationFrame || function(cb){ return setTimeout(cb, 16); };
+    raf(function(){
+      zoomRafOn = false;
+      var zp = zoomPending; zoomPending = null;
+      if (zp !== null) setZoom(zp);
+    });
+  }
+
+  // ---------- horizontal trace line ----------
+  function syncTraceUI(){
+    var on = state.trace;
+    els.traceBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    els.tracePrice.disabled = !on;
+    if (!on){
+      els.traceHint.textContent = "Turn it on, then move across the chart — the dot and the stats ride along the line at that one price. Click the chart to drop the line at the price you clicked.";
+      return;
+    }
+    if (state.tracePrice === null){ els.traceHint.textContent = "Type a price for the line."; return; }
+    var tr = trade();
+    var inWin = state.tracePrice >= tr.S - state.zoom && state.tracePrice <= tr.S + state.zoom;
+    els.traceHint.textContent = inWin
+      ? "Tracing at $" + state.tracePrice.toFixed(2) + " — move left/right across the chart to follow PnL along this price through the day. Click the chart to move the line."
+      : "The line at $" + state.tracePrice.toFixed(2) + " sits outside the current ±$" + state.zoom.toFixed(2) + " price window, so it isn't drawn — zoom out or pick a price inside the window. The readout still follows it if you hover.";
+  }
+
+  // ---------- render all ----------
+  function render(){
+    var tr = trade();
+    els.timeVal.innerHTML = clockPT(tr.nowMin) + " <small>· " + leftLabel(780 - tr.nowMin) + "</small>";
+    updateZoomUI();
+    // Each section renders in isolation: a failure in one can never blank the others.
+    var steps = [
+      function(){ updateIVNote(); },
+      function(){ syncTraceUI(); },
+      function(){ renderStats(tr); },
+      function(){ renderBreakdown(tr); },
+      function(){ renderChart(tr); },
+      function(){ renderHeatmap(tr); }
+    ];
+    for (var si = 0; si < steps.length; si++){ try { steps[si](); } catch(e){} }
+  }
+
+  // ---------- events ----------
+  $("btnCall").addEventListener("click", function(){ setType("call"); });
+  $("btnPut").addEventListener("click", function(){ setType("put"); });
+  function setType(t){
+    state.type = t;
+    $("btnCall").setAttribute("aria-pressed", t === "call" ? "true" : "false");
+    $("btnPut").setAttribute("aria-pressed", t === "put" ? "true" : "false");
+    matchIV(); render();
+  }
+  $("btnNow").addEventListener("click", function(){
+    // Locked to Pacific Time via the shared helper — it reads the clock in
+    // America/Los_Angeles no matter what timezone the device itself is in.
+    var mins = currentPTMinutes();
+    var note = $("nowNote");
+    if (mins === null){ note.textContent = "Couldn't read the clock — set the time with the slider instead."; return; }
+    var clamped = Math.min(Math.max(mins, 390), 780); // market window: 6:30am–1:00pm PT
+    els.time.value = String(Math.round(clamped/5)*5);
+    if (mins < 390) note.textContent = "Pacific Time is " + clockPT(mins) + " — before the open, so the slider is set to 6:30am PT.";
+    else if (mins > 780) note.textContent = "Pacific Time is " + clockPT(mins) + " — past expiry, so the slider is set to 1:00pm PT.";
+    else note.textContent = "Slider set to the current Pacific Time: " + clockPT(mins) + " — locked to PT, not your device's timezone.";
+    matchIV(); render();
+  });
+  $("btnATM").addEventListener("click", function(){
+    els.strike.value = (Math.round(num(els.spot, 680)*2)/2).toFixed(0);
+    matchIV(); render();
+  });
+  [els.spot, els.strike, els.premium, els.time].forEach(function(el){
+    el.addEventListener("input", function(){ matchIV(); render(); });
+  });
+  els.contracts.addEventListener("input", render);
+  els.iv.addEventListener("input", function(){ state.ivMatched = false; render(); });
+  els.iv.addEventListener("change", function(){
+    var v = parseFloat(els.iv.value);
+    if (isFinite(v)) els.iv.value = String(Math.min(Math.max(v, 1), 300));
+    state.ivMatched = false; render();
+  });
+  els.traceBtn.addEventListener("click", function(){
+    state.trace = !state.trace;
+    if (state.trace && state.tracePrice === null){
+      // Start the line at the current SPY price — the price he's watching.
+      state.tracePrice = trade().S;
+      els.tracePrice.value = state.tracePrice.toFixed(2);
+    }
+    if (state.trace && state.hoverTime !== null) state.hoverPrice = state.tracePrice;
+    render();
+  });
+  els.tracePrice.addEventListener("input", function(){
+    var v = parseFloat(els.tracePrice.value);
+    if (isFinite(v) && v > 0){
+      state.tracePrice = v;
+      if (state.trace && state.hoverTime !== null) state.hoverPrice = v;
+      render();
+    }
+  });
+  document.querySelectorAll("[data-zoom]").forEach(function(b){
+    b.addEventListener("click", function(){
+      zoomPending = null;
+      setZoom(parseFloat(b.getAttribute("data-zoom")));
+      if (Math.abs(state.zoom - parseFloat(b.getAttribute("data-zoom"))) >= 0.005) render();
+    });
+  });
+  // Scroll to zoom: wheel up (deltaY < 0) zooms in, wheel down zooms out,
+  // capped at the ±$5 maximum and ±$0.50 minimum from earlier requests.
+  // Attached to the SVG element itself, which survives every re-render
+  // (only its inner markup is rebuilt). preventDefault stops the page
+  // scrolling while the pointer is over the chart.
+  els.chart.addEventListener("wheel", function(e){
+    e.preventDefault();
+    var dy = e.deltaY || 0;
+    if (e.deltaMode === 1) dy *= 16;       // lines → pixels
+    else if (e.deltaMode === 2) dy *= 400; // pages → pixels
+    if (!dy) return;
+    // Trackpad pinch arrives as ctrlKey + wheel; use a stronger factor there.
+    var factor = Math.exp(dy * (e.ctrlKey ? 0.008 : 0.0016));
+    var base = zoomPending !== null ? zoomPending : state.zoom;
+    scheduleZoom(base * factor);
+  }, { passive:false });
+  els.chart.addEventListener("dblclick", function(e){
+    e.preventDefault();
+    zoomPending = null;
+    setZoom(ZOOM_MAX);
+  });
+  // Pinch to zoom on touch screens (two-finger spread narrows the window).
+  var pinchDist0 = null, pinchZoom0 = null;
+  function pinchDist(e){
+    var a = e.touches[0], b = e.touches[1];
+    var dx = a.clientX - b.clientX, dy2 = a.clientY - b.clientY;
+    return Math.sqrt(dx*dx + dy2*dy2);
+  }
+  els.chart.addEventListener("touchstart", function(e){
+    if (e.touches.length === 2){
+      pinchDist0 = pinchDist(e);
+      pinchZoom0 = state.zoom;
+      state.hoverPrice = null;
+      state.hoverTime = null;
+      if (e.cancelable) e.preventDefault();
+    }
+  }, { passive:false });
+  els.chart.addEventListener("touchmove", function(e){
+    if (e.touches.length === 2 && pinchDist0){
+      if (e.cancelable) e.preventDefault();
+      var d = pinchDist(e);
+      if (d > 0) scheduleZoom(pinchZoom0 * pinchDist0 / d);
+    }
+  }, { passive:false });
+  function pinchEnd(e){
+    if (!e.touches || e.touches.length < 2){ pinchDist0 = null; pinchZoom0 = null; }
+  }
+  els.chart.addEventListener("touchend", pinchEnd);
+  els.chart.addEventListener("touchcancel", pinchEnd);
+  if (window.matchMedia){
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    // Older webviews expose addListener instead of addEventListener here;
+    // calling the missing one would throw and stop the first render entirely.
+    if (mq.addEventListener) mq.addEventListener("change", render);
+    else if (mq.addListener) mq.addListener(render);
+  }
+  var resizeTimer = null, lastNarrow = window.innerWidth < 640;
+  window.addEventListener("resize", function(){
+    var nowNarrow = window.innerWidth < 640;
+    if (nowNarrow === lastNarrow) return;
+    lastNarrow = nowNarrow;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function(){ state.hmSel = null; render(); }, 150);
+  });
+
+  // Start at the real current time: set the TIME NOW slider to now (PT)
+  // on load, so the chart's left edge is now — e.g. 11:28am — not 6:30am.
+  try {
+    var initNow = currentPTMinutes();
+    if (initNow !== null){
+      var initClamped = Math.min(Math.max(initNow, 390), 780);
+      els.time.value = String(Math.round(initClamped / 5) * 5);
+      var initNote = $("nowNote");
+      if (initNote){
+        if (initNow < 390) initNote.textContent = "Pacific Time is " + clockPT(initNow) + " — before the open, so the chart starts at 6:30am PT.";
+        else if (initNow > 780) initNote.textContent = "Pacific Time is " + clockPT(initNow) + " — past expiry, so the chart shows the last 30 minutes to 1:00pm PT.";
+        else initNote.textContent = "Chart starts at the current Pacific Time: " + clockPT(initNow) + " — locked to PT, not your device's timezone.";
+      }
+    }
+  } catch(e){}
+  try { matchIV(); } catch(e){}
+  render();
+})();
+</script>
+</body>
+</html>
